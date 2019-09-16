@@ -5,3 +5,4 @@ bs4
 flask_migrate
 flask_script
 psycopg2
+emoji

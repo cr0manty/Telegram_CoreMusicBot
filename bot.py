@@ -1,5 +1,4 @@
 import os
-import webbrowser
 
 from telebot import TeleBot
 
@@ -39,12 +38,14 @@ class StartBot(TeleBot):
                           )
 
     def send_post(self, chat_id, item, reply_markup=None):
+        self.send_chat_action(chat_id, action='typing')
         img = open(item.load_img(), 'rb')
         self.send_photo(chat_id, img, str(item), parse_mode='Markdown', reply_markup=reply_markup)
         img.close()
 
-    def open_web_link(self):
-        webbrowser.open(self.parse.items[self.index].get('download'))
+    def send_new_post(self, chat_id, msg_id, reply_markup=None):
+        self.delete_message(chat_id, msg_id)
+        self.send_post(chat_id, self.get_item(), reply_markup=reply_markup)
 
     def get_item(self):
         return self.parse.items[self.index]
