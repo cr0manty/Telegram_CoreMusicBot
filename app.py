@@ -4,7 +4,7 @@ from flask_script import Manager
 from flask_sqlalchemy import SQLAlchemy
 
 from bot import StartBot
-from config import TOKEN
+from config import TOKEN, SITE
 from config import Configuration
 
 server = Flask(__name__)

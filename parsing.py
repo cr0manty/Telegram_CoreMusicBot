@@ -1,43 +1,34 @@
 import requests
 
-from urllib import request
-
 from bs4 import BeautifulSoup
 from datetime import date
 
 
 class Item:
     def __init__(self, context):
-        self.items = context
+        self.info = context
         self.create_date()
 
-    def get(self, index):
-        return self.items.get(index)
-
     def song_str(self):
+        if not self.info.get('songs'):
+            return 'Songs list is empty'
         string = ''
-        for i in self.items.get('songs'):
+        for i in self.info.get('songs'):
             if i[-1] == '>':
                 i = i[0:-5]
             string += '{}\n'.format(i)
-        return string if string else 'Songs list is empty'
-
-    def load_img(self):
-        try:
-            img_dir = 'utils/logo.png'
-            file = open(img_dir, 'wb')
-            file.write(request.urlopen(self.items.get('img')).read())
-            file.close()
-        except Exception:
-            img_dir = 'utils/default.png'
-        return img_dir
+        return string
 
     def __str__(self):
         return '*{}*\n\nGenre: {}\n' \
-               'Country: {}\nRelease date: {}\n\n' \
-               'Song list:\n{}'.format(self.items.get('name'), self.items.get('genre'),
-                                       self.items.get('country'), self.items.get('date'),
+               'Country: {}\nRelease date:\n{}\n\n' \
+               'Song list:\n{}'.format(self.info.get('name'), self.info.get('genre'),
+                                       self.info.get('country'),
+                                       self.info.get('date').strftime('%d %B %Y'),
                                        self.song_str())
+
+    def __getitem__(self, index):
+        return self.info[index]
 
     @staticmethod
     def month_to_num(string):
@@ -55,24 +46,22 @@ class Item:
 
     def create_date(self):
         try:
-            if not self.items['date']:
-                self.items['date'] = date.today()
-            else:
-                _date = self.items['date'].split(' ')
-                day = int(_date[2][0:-1])
-                month = self.month_to_num(_date[1])
-                year = int(_date[3])
-                self.items['date'] = date(year=year,
-                                      month=month,
-                                      day=day)
+            _date = self.info['date'].split(' ')
+            day = int(_date[2][0:-1])
+            month = self.month_to_num(_date[1])
+            year = int(_date[3])
+            self.info['date'] = date(year=year, month=month,
+                                     day=day)
         except Exception as e:
-            raise Exception("'create_date' error with '{}'".format(e))
+            try:
+                self.info['date'] = date.today()
+            except Exception as e:
+                raise Exception("'create_date' error with '{}'".format(e))
 
 
 class ParseSite:
     items = []
-    index = 0
-    page = 0
+    length = 0
 
     @staticmethod
     def get_html(site):
@@ -84,58 +73,85 @@ class ParseSite:
         end = -1 if end_symbol is None else string.rfind(end_symbol)
         return string[begin:end]
 
+    def get_elements(self, site):
+        soup = BeautifulSoup(self.get_html(site),
+                             features='html.parser')
+        return soup.find_all('li', class_='tcarusel-item main-news')
+
     def set_info(self, site):
         try:
-            soup = BeautifulSoup(self.get_html(site),
-                             features='html.parser')
-            item_list = soup.find_all('li', class_='tcarusel-item main-news')
+            item_list = self.get_elements(site)
             for i in item_list:
                 info_link = i.find('a').get('href')
                 self.items.append(Item(self.take_info(info_link)))
-            self.index = len(self.items)
-            self.page += 1
         except Exception as e:
             raise Exception("'set_info' error with '{}'".format(e))
 
+    def try_add_date(self, info):
+        for i in info:
+            if str(i).find('Date:') != -1:
+                return self.cut(str(i), begin_symbol=':', end_symbol='.')
+        return ' '
+
     def take_info(self, url):
-        context = dict()
         try:
+            context = dict()
+            context['info'] = url
             soup = BeautifulSoup(self.get_html(url), features='html.parser')
-            main_content = soup.find('center').find('a')
-            context['name'] = main_content.find('img').get('alt')
-            context['img'] = main_content.find('img').get('src')
-            context['download'] = self.cut(
-                soup.find('div', class_='quote').find('a').get('href'),
-                begin_symbol='='
-            )
-            context['date'] = self.cut(
-                str(soup.find_all('div', class_='fullo-news-line')[3]),
-                begin_symbol=':', end_symbol='.'
-            )
+            main_content = soup.find_all('a')
+            for i in reversed(main_content):
+                i = i.find('img')
+                if i:
+                    main_content = i
+                    break
+            context['name'] = main_content.get('alt')
+            context['img'] = main_content.get('src')
+            download_link = soup.find('div', class_='quote')
+            if download_link:
+                context['download'] = self.cut(download_link.find('a').get('href'),
+                                               begin_symbol='=')
+            else:
+                context['download'] = 'https://google.com/'
+            context['date'] = self.try_add_date(
+                soup.find_all('div', class_='fullo-news-line'))
             album_info = soup.find('div', class_='full-news-info').find_all('br')
-            context['genre'] = str(album_info[0].previous_sibling)
-            context['country'] = str(album_info[1].previous_sibling)
+            context['genre'] = str(album_info[0].previous_sibling) if album_info else ' '
+            context['country'] = str(album_info[1].previous_sibling) if album_info else ' '
             songs = []
-            for i in range(4, len(album_info)):
-                songs.append(str(album_info[i].previous_sibling))
-            context['songs'] = songs
+            try:
+                for i in range(4, len(album_info)):
+                    songs.append(str(album_info[i].previous_sibling))
+                context['songs'] = songs or None
+            except:
+                pass
+            self.length += 1
+            return context
         except Exception as e:
             raise Exception("'take_info' error with '{}'".format(e))
-        return context
+
+    def last_page(self, url):
+        soup = BeautifulSoup(self.get_html(url), features='html.parser')
+        page = soup.find('div', class_='navigation').find_all('a')[9].text
+        return int(page)
 
     def __len__(self):
-        return len(self.items)
+        return self.length
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        if self.index != 0:
-            self.index -= 1
-            return self.items[self.index]
+        if self.length != 0:
+            self.length -= 1
+            return self.items[self.length]
         else:
-            self.index = self.__len__()
+            self.length = self.__len__()
             raise StopIteration
 
     def __getitem__(self, index):
         return self.items[index]
+
+
+if __name__ == '__main__':
+    parse = ParseSite()
+    page = parse.last_page('http://coreradio.ru')
