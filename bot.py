@@ -2,6 +2,9 @@ import os
 
 from telebot import TeleBot
 
+from search import SearchEngine
+from config import SITE
+
 
 class StartBot(TeleBot):
     web_hook_url = 'https://core-bot-telegram.herokuapp.com/'
@@ -13,6 +16,7 @@ class StartBot(TeleBot):
         self.DEBUG = bool(os.environ.get('HEROKU_DEBUG') or debug)
         self.WEB = bool('HEROKU_DEBUG' in list(os.environ.keys()))
         self.remove_webhook()
+        self.search = SearchEngine(SITE)
 
     def start(self):
         if self.WEB:
@@ -40,3 +44,4 @@ class StartBot(TeleBot):
     def send_new_post(self, chat_id, msg_id, item, reply_markup=None):
         self.delete_message(chat_id, msg_id)
         self.send_post(chat_id, item, reply_markup=reply_markup)
+

@@ -2,6 +2,7 @@ import requests
 
 from bs4 import BeautifulSoup
 from datetime import date
+from urllib import request
 
 
 class Item:
@@ -30,6 +31,16 @@ class Item:
     def __getitem__(self, index):
         return self.info[index]
 
+    def load_img(self):
+        try:
+            img_dir = 'utils/logo.png'
+            file = open(img_dir, 'wb')
+            file.write(request.urlopen(self.info.get('img')).read())
+            file.close()
+        except Exception as e:
+            img_dir = 'utils/default.png'
+        return img_dir
+
     @staticmethod
     def month_to_num(string):
         month = {
@@ -46,7 +57,7 @@ class Item:
 
     def create_date(self):
         try:
-            _date = self.info['date'].split(' ')
+            _date = self.info.get('date').split(' ')
             day = int(_date[2][0:-1])
             month = self.month_to_num(_date[1])
             year = int(_date[3])
@@ -73,17 +84,17 @@ class ParseSite:
         end = -1 if end_symbol is None else string.rfind(end_symbol)
         return string[begin:end]
 
-    def get_elements(self, site):
+    def page_info(self, site):
         soup = BeautifulSoup(self.get_html(site),
                              features='html.parser')
         return soup.find_all('li', class_='tcarusel-item main-news')
 
-    def set_info(self, site):
+    def get_page_elements(self, site):
         try:
-            item_list = self.get_elements(site)
+            item_list = self.page_info(site)
             for i in item_list:
                 info_link = i.find('a').get('href')
-                self.items.append(Item(self.take_info(info_link)))
+                self.items.append(Item(self.album_info(info_link)))
         except Exception as e:
             raise Exception("'set_info' error with '{}'".format(e))
 
@@ -93,7 +104,7 @@ class ParseSite:
                 return self.cut(str(i), begin_symbol=':', end_symbol='.')
         return ' '
 
-    def take_info(self, url):
+    def album_info(self, url):
         try:
             context = dict()
             context['info'] = url
@@ -122,12 +133,17 @@ class ParseSite:
                 for i in range(4, len(album_info)):
                     songs.append(str(album_info[i].previous_sibling))
                 context['songs'] = songs or None
-            except:
+            except Exception:
                 pass
             self.length += 1
             return context
         except Exception as e:
             raise Exception("'take_info' error with '{}'".format(e))
+
+    def find_result(self, site):
+        soup = BeautifulSoup(self.get_html(site),
+                             features='html.parser')
+        return soup.find('div', class_='s-block-content').text.split(' ')[1]
 
     def last_page(self, url):
         soup = BeautifulSoup(self.get_html(url), features='html.parser')
@@ -135,7 +151,7 @@ class ParseSite:
         return int(page)
 
     def __len__(self):
-        return self.length
+        return len(self.items)
 
     def __iter__(self):
         return self
@@ -150,8 +166,3 @@ class ParseSite:
 
     def __getitem__(self, index):
         return self.items[index]
-
-
-if __name__ == '__main__':
-    parse = ParseSite()
-    page = parse.last_page('http://coreradio.ru')

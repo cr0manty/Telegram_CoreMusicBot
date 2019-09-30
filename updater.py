@@ -39,14 +39,14 @@ class Updater(Thread):
             return True
 
         db_elements = Album.query.count()
-        per_page = len(self.parse.get_elements(self.site))
-        last_elements = len(self.parse.get_elements(
+        per_page = len(self.parse.page_info(self.site))
+        last_elements = len(self.parse.page_info(
             self.site + self.page.format(self.last_page)))
         site_elements = (self.last_page - 1) * per_page + last_elements
         if site_elements == db_elements:
             return False
         elif site_elements > db_elements:
-            self.end_page = int((site_elements - db_elements) / 20)
+            self.end_page = int((site_elements - db_elements) / per_page)
             return True
 
     def run(self):
@@ -54,7 +54,7 @@ class Updater(Thread):
             if self.check_for_update():
                 for i in range(self.end_page, 0, -1):
                     try:
-                        self.parse.set_info(self.site + self.page.format(i))
+                        self.parse.get_page_elements(self.site + self.page.format(i))
                     except Exception as e:
                         print("Exception called from Updater:\n'{}'".format(e))
                         i += 1

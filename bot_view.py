@@ -111,7 +111,17 @@ def button_click(call):
 
 @bot.message_handler(commands=['search'])
 def search_song(message):
-    pass
+    try:
+        text = message.text.split()
+        text = '+'.join(text[1:len(message.text)])
+        bot.send_message(message.chat.id, 'Мне нужна минутка, для того чтоб найти данные')
+        bot.search.start(text)
+        bot.send_message(message.chat.id, 'Найденно {} элементов по вашему запросу'.format(bot.search.result))
+        bot.send_post(message.chat.id, bot.search.parser.items[0])
+
+    except Exception as e:
+        if bot.debug():
+            bot.msg_error(message.chat.id, e, message.text)
 
 
 @bot.message_handler(commands=['favourite'])
