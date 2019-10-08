@@ -6,10 +6,6 @@ from threading import Thread
 from time import sleep
 
 
-# TODO:
-# - search engine
-# - optimize db update
-
 def to_sec(time):
     time = time.split(':')
     if time[1] == 'min':
@@ -58,7 +54,7 @@ class Updater(Thread):
                     except Exception as e:
                         print("Exception called from Updater:\n'{}'".format(e))
                         i += 1
-                sleep(to_sec('12:hour'))
+                sleep(to_sec('3:hour'))
 
 
 class Saver(Thread):
@@ -68,7 +64,7 @@ class Saver(Thread):
         self.last_save = Album.query.count()
 
     def run(self):
-        sleep(to_sec('0:min'))
+        sleep(to_sec('2:min'))
         while True:
             for i in range(self.last_save, len(self.parse)):
                 album = Album.query.filter_by(name=self.parse[i]['name']).first()
@@ -81,7 +77,7 @@ class Saver(Thread):
                         pass
                 if not i % 50:
                     db.session.commit()
-            sleep(to_sec('0:min'))
+            sleep(to_sec('2:hour'))
 
 
 class UpdateDB(Thread):
