@@ -1,6 +1,6 @@
 venv/
 .idea/
 *.pyc
-logo.png
+media/logo.png
 *.db
 *.sqlite3

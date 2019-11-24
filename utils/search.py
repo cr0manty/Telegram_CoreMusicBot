@@ -1,5 +1,5 @@
-from parsing import ParseSite
-from config import SITE
+from utils.parsing import ParseSite
+from utils.config import SITE
 
 
 class SearchEngine:

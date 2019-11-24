@@ -3,9 +3,9 @@ from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 from flask_sqlalchemy import SQLAlchemy
 
-from bot import StartBot
-from config import TOKEN, SITE
-from config import Configuration
+from bot.bot import StartBot
+from utils.config import TOKEN, SITE
+from utils.config import Configuration
 
 server = Flask(__name__)
 server.config.from_object(Configuration)

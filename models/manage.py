@@ -1,4 +1,4 @@
-from app import manager
+from utils.app import manager
 
 import models
 

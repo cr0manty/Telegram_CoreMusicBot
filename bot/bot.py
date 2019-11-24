@@ -2,8 +2,8 @@ import os
 
 from telebot import TeleBot
 
-from search import SearchEngine
-from config import SITE
+from utils.search import SearchEngine
+from utils.config import SITE
 
 
 class StartBot(TeleBot):

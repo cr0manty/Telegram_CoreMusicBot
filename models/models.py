@@ -1,7 +1,7 @@
 from datetime import date
 from urllib import request
 
-from app import db
+from utils.app import db
 
 albums = db.Table('user_albums',
                   db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
@@ -76,10 +76,10 @@ class Album(db.Model):
 
     def load_img(self):
         try:
-            img_dir = 'utils/logo.png'
+            img_dir = 'media/logo.png'
             file = open(img_dir, 'wb')
             file.write(request.urlopen(self.image).read())
             file.close()
         except Exception as e:
-            img_dir = 'utils/default.png'
+            img_dir = 'media/default.png'
         return img_dir

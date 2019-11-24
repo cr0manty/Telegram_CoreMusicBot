@@ -1,6 +1,6 @@
-from app import db
-from parsing import ParseSite
-from models import Album
+from utils.app import db
+from utils.parsing import ParseSite
+from models.models import Album
 
 from threading import Thread
 from time import sleep

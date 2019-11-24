@@ -2,8 +2,8 @@ from datetime import datetime
 from telebot import types
 from emoji import emojize
 
-from app import bot, db
-from models import User, Album
+from utils.app import bot, db
+from models.models import User, Album
 
 
 def check_user(user_info):

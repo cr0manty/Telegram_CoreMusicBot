@@ -1,9 +1,8 @@
-import bot_view
-import site_view
+from bot import site_view, bot_view
 
-from app import bot
-from updater import start_update
-from config import SITE, FORCE_UPDATE
+from utils.app import bot
+from utils.updater import start_update
+from utils.config import SITE, FORCE_UPDATE
 
 if __name__ == '__main__':
     start_update(SITE, FORCE_UPDATE)
